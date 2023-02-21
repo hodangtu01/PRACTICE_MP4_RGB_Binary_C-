@@ -1,0 +1,111 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace PRACTICE_MP4_RGB_BINARY_C
+{
+    public partial class Form1 : Form
+    {
+        Bitmap HinhGoc; // --> Biến toàn cục
+        public Form1()
+        {
+            InitializeComponent();
+            // Load hình .jpg từ file
+            // Cần phải chuyển biến này thành biến toàn cục (global) để có thể cho các hàm khác.
+            HinhGoc = new Bitmap(@"C:\Users\ADMIN\Pictures\bird.jpg");
+
+            // Hiển thị hình gốc trong picBox_HinhGoc đã tạo
+            picBox_HinhGoc.Image = HinhGoc;
+
+            // Tính hình mức xám theo phương pháp Luminance
+            picBox_XamLuminance.Image = ChuyenHinhRGBSangHinhXamLuminance(HinhGoc);
+
+            // Tính hình nhị phân và cho hiển thị 
+            // Giả sử cho ngưỡng là 100
+            picBox_NhiPhan.Image = ChuyenXamLuminaneSangHinhNhiPhan(HinhGoc, 125);
+
+        }
+        public Bitmap ChuyenHinhRGBSangHinhXamLuminance(Bitmap HinhGoc)
+        {
+            // Tạo 1 biến HinhMucXam để lưu trữ
+            // một hình mới được tạo ra có kích thước cùng với hình gốc
+            Bitmap HinhMucXam = new Bitmap(HinhGoc.Width, HinhGoc.Height);
+
+            for (int x = 0; x < HinhGoc.Width; x++)
+                for (int y = 0; y < HinhGoc.Height; y++)
+                {
+                    // Lấy điểm ảnh
+                    // Color của C# là một cấu trúc chứa dữ liệu 4 thành phần red, green, blue và độ trong suốt A
+                    // .GetPixel lấy các giá trị ở 4 kênh
+                    // Tạo biến byte để lưu trữ các giá trị vừa lấy được
+                    Color pixel = HinhGoc.GetPixel(x, y);
+                    byte R = pixel.R;
+                    byte G = pixel.G;
+                    byte B = pixel.B;
+
+                    // Tính giá trị mức xám cho điểm ảnh tại (x,y) theo phương pháp Luminance // Linear Luminance độ sáng tuyến tính
+                    // gray được khai báo là kiểu byte trong khi đó tính theo phương pháp Luminance ra số thập phân
+                    byte gray = (byte)(0.2126 * R + 0.7152 * G + 0.0722 * B);
+
+
+                    // Gán giá trị mức xám vừa tính vào hình mức xám 
+                    HinhMucXam.SetPixel(x, y, Color.FromArgb(gray, gray, gray));
+                }
+            return HinhMucXam;
+        }
+
+        public Bitmap ChuyenXamLuminaneSangHinhNhiPhan(Bitmap HinhGoc, byte nguong)
+        {
+            Bitmap HinhNhiPhan = new Bitmap(HinhGoc.Width, HinhGoc.Height);
+
+            for (int x = 0; x < HinhGoc.Width; x++)
+                for (int y = 0; y < HinhGoc.Height; y++)
+                {
+                    // Lấy điểm ảnh
+                    Color pixel = HinhGoc.GetPixel(x, y);
+                    byte R = pixel.R;
+                    byte G = pixel.G;
+                    byte B = pixel.B;
+
+                    // Các điểm ảnh xám có giá trị pixel từ 0 đến 255 (0 là đen, 255 là trắng)
+                    // Để chuyển sang ảnh nhị phân thì ta thiết lập một giá trị ngưỡng (Threshold)
+                    // Chuyển ảnh màu RGB sang Mức xám bằng phương pháp Luminance
+                    // Tính giá trị mức xám cho điểm ảnh tại (x,y)
+                    byte nhiphan = (byte)(0.2126 * R + 0.7152 * G + 0.0722 * B);
+
+                    // Phân loại điểm ảnh sang nhị phân dựa vào giá trị ngưỡng 
+                    if (nhiphan < nguong)
+                        nhiphan = 0;
+                    else
+                        nhiphan = 255;
+
+                    // Gán giá trị mức xám vừa tính vào hình nhị phân 
+                    HinhNhiPhan.SetPixel(x, y, Color.FromArgb(nhiphan, nhiphan, nhiphan));
+                }
+            return HinhNhiPhan;
+        }
+        // Bước 3: Phương pháp 2 ( Dùng thanh cuộn SrcollBar để thay đổi ngưỡng)
+        private void vScrollBarBin_ValueChanged(object sender, EventArgs e)
+        {
+            // Lấy giá trị ngưỡng từ giá trị của thanh cuộn
+            // Do value trong thanh cuộn trả về là int, trong khi ngưỡng là kiểu byte
+            // Nên ta cần phải ép kiểu dữ liệu int về byte
+            byte nguong = (byte)vScrollBarBin.Value;
+
+            // Cho hiển thị giá trị ngưỡng
+            label4.Text = nguong.ToString();
+
+            // Gọi hàm tính ảnh nhị phân và cho hiển thị 
+            picBox_NhiPhan.Image = ChuyenXamLuminaneSangHinhNhiPhan(HinhGoc, nguong); // --> Sử dụng biến toàn cục vì private
+
+        }
+       
+
+    }
+}
